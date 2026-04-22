@@ -1,63 +1,97 @@
-# 🗺️ RAG Marseille
+# RAG Marseille
 
 Guide touristique intelligent de Marseille propulsé par l'IA.
-Pose une question sur Marseille, obtiens une réponse personnalisée basée sur de vraies données.
+Pose une question sur Marseille, obtiens une réponse personnalisée basée sur **148 lieux réels** issus de Google Places.
 
-## 🛠️ Technologies
+## Fonctionnement
+Question utilisateur
+↓
+API Flask
+↓
+ChromaDB recherche les lieux pertinents (recherche sémantique)
+↓
+GPT-3.5 génère une réponse basée sur ces lieux
+↓
+Réponse + sources affichées
 
-- **Python / Flask** — API REST
-- **ChromaDB** — base de données vectorielle
-- **OpenAI GPT-3.5** — génération de réponses
-- **Google Places API** — données des lieux
-- **Docker / Docker Compose** — conteneurisation
+## Stack technique
 
-## 🚀 Lancer le projet
+| Technologie | Rôle |
+|---|---|
+| Python / Flask | API REST |
+| ChromaDB | Base de données vectorielle |
+| OpenAI GPT-3.5 | Génération de réponses |
+| Google Places API | Source des données (148 lieux) |
+| Docker / Docker Compose | Conteneurisation |
+
+## Lancer le projet en local
 
 ### Prérequis
 - Docker Desktop installé
-- Une clé API OpenAI
-- Une clé API Google Places
+- Une clé API OpenAI — platform.openai.com
+- Une clé API Google Places — console.cloud.google.com
 
 ### Installation
 
 1. Clone le projet
-\```bash
-git clone https://github.com/ton-username/rag-marseille.git
+
+```bash
+git clone https://github.com/louis-varennes/rag-marseille.git
 cd rag-marseille
-\```
+```
 
 2. Crée le fichier `.env`
-\```bash
 OPENAI_API_KEY=ta_cle_openai
 GOOGLE_PLACES_API_KEY=ta_cle_google
-\```
 
 3. Lance avec Docker
-\```bash
+
+```bash
 docker compose up
-\```
+```
 
-L'API est disponible sur `http://localhost:5002`
+4. Ouvre dans le navigateur
+http://localhost:5002
 
-## 📡 Utilisation
+Au démarrage, l'API charge automatiquement **148 lieux** depuis Google Places et les indexe dans ChromaDB.
+
+## API — Routes disponibles
+
+### Interface web
+GET /
 
 ### Poser une question
-\```bash
+```bash
 curl -X POST http://localhost:5002/question \
   -H "Content-Type: application/json" \
   -d '{"question": "Où manger une bouillabaisse à Marseille ?"}'
-\```
+```
 
-### Ajouter un lieu
-\```bash
+### Ajouter un lieu manuellement
+```bash
 curl -X POST http://localhost:5002/ajouter \
   -H "Content-Type: application/json" \
   -d '{"lieu": "Description du lieu..."}'
-\```
+```
 
-### Vérifier l'état de l'API
-\```bash
-curl http://localhost:5002/
-\```
+### Statut de l'API
+```bash
+curl http://localhost:5002/status
+```
 
-## 🏗️ Architecture
+## Structure du projet
+rag-marseille/
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── app.py
+├── .env               <- clés API (non versionné)
+├── .gitignore
+└── templates/
+└── index.html
+
+## Auteur
+
+**Louis Varennes** — étudiant Développeur IA & Data
+LaPlateforme Marseille — promotion 2025
+github.com/louis-varennes
