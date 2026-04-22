@@ -31,30 +31,53 @@ def charger_lieux_google():
 
     print("Chargement des lieux depuis Google Places...")
     url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-    params = {
-        "query": "lieux incontournables Marseille France",
-        "language": "fr",
-        "key": GOOGLE_API_KEY
-    }
 
-    response = requests.get(url, params=params)
-    data = response.json()
+    requetes = [
+        "bars et pubs Marseille",
+        "restaurants Marseille",
+        "musées Marseille",
+        "plages Marseille",
+        "monuments historiques Marseille",
+        "lieux culturels Marseille",
+        "parcs et jardins Marseille",
+        "quartiers à visiter Marseille",
+    ]
 
     documents = []
-    ids = []
+    ids_set = set()
+    compteur = 0
 
-    for i, place in enumerate(data.get("results", [])):
-        nom = place.get("name", "")
-        adresse = place.get("formatted_address", "")
-        types = ", ".join(place.get("types", []))
-        note = place.get("rating", "non noté")
-        description = f"{nom} est situé à {adresse}. Type : {types}. Note Google : {note}/5."
-        documents.append(description)
-        ids.append(f"google_{i}")
+    for requete in requetes:
+        params = {
+            "query": requete,
+            "language": "fr",
+            "key": GOOGLE_API_KEY
+        }
+
+        response = requests.get(url, params=params)
+        data = response.json()
+
+        for place in data.get("results", []):
+            place_id = place.get("place_id", "")
+            if place_id in ids_set:
+                continue
+
+            ids_set.add(place_id)
+            nom = place.get("name", "")
+            adresse = place.get("formatted_address", "")
+            types = ", ".join(place.get("types", []))
+            note = place.get("rating", "non noté")
+            description = f"{nom} est situé à {adresse}. Type : {types}. Note Google : {note}/5."
+            documents.append(description)
+            compteur += 1
+
+        print(f"'{requete}' → {len(data.get('results', []))} résultats")
+        time.sleep(0.5)
 
     if documents:
+        ids = [f"google_{i}" for i in range(len(documents))]
         collection.add(documents=documents, ids=ids)
-        print(f"{len(documents)} lieux ajoutés depuis Google Places")
+        print(f"{compteur} lieux uniques ajoutés dans ChromaDB")
 
 @app.route("/")
 def accueil():
