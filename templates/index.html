@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Marseille</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1rem;
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+
+        textarea {
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            resize: none;
+            height: 80px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        textarea:focus { border-color: #2563eb; }
+
+        button {
+            margin-top: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #93c5fd; cursor: not-allowed; }
+
+        .result {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            display: none;
+        }
+
+        .result.visible { display: block; }
+
+        .reponse {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        .sources-titre {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        .source {
+            background: #f8fafc;
+            border-left: 3px solid #2563eb;
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            color: #444;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        .loading.visible { display: block; }
+    </style>
+</head>
+<body>
+
+    <h1>🗺️ RAG Marseille</h1>
+    <p class="subtitle">Pose une question sur Marseille, je te réponds.</p>
+
+    <div class="search-box">
+        <textarea id="question" placeholder="Où manger une bouillabaisse ? Que visiter ce weekend ?"></textarea>
+        <button id="btn" onclick="poserQuestion()">Envoyer</button>
+    </div>
+
+    <p class="loading" id="loading">Recherche en cours...</p>
+
+    <div class="result" id="result">
+        <div class="reponse" id="reponse"></div>
+        <div class="sources-titre">Sources</div>
+        <div id="sources"></div>
+    </div>
+
+    <script>
+        async function poserQuestion() {
+            const question = document.getElementById('question').value.trim();
+            if (!question) return;
+
+            const btn = document.getElementById('btn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+
+            btn.disabled = true;
+            loading.classList.add('visible');
+            result.classList.remove('visible');
+
+            try {
+                const response = await fetch('/question', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+
+                const data = await response.json();
+
+                document.getElementById('reponse').textContent = data.reponse;
+
+                const sourcesDiv = document.getElementById('sources');
+                sourcesDiv.innerHTML = '';
+                data.sources.forEach(source => {
+                    const div = document.createElement('div');
+                    div.className = 'source';
+                    div.textContent = source;
+                    sourcesDiv.appendChild(div);
+                });
+
+                result.classList.add('visible');
+            } catch (error) {
+                document.getElementById('reponse').textContent = "Erreur lors de la requête.";
+                result.classList.add('visible');
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('visible');
+            }
+        }
+
+        document.getElementById('question').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                poserQuestion();
+            }
+        });
+    </script>
+
+</body>
+</html>

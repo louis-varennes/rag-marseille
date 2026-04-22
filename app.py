@@ -2,7 +2,7 @@ import os
 import time
 import requests
 import chromadb
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from openai import OpenAI
 
 app = Flask(__name__)
@@ -48,7 +48,6 @@ def charger_lieux_google():
         adresse = place.get("formatted_address", "")
         types = ", ".join(place.get("types", []))
         note = place.get("rating", "non noté")
-
         description = f"{nom} est situé à {adresse}. Type : {types}. Note Google : {note}/5."
         documents.append(description)
         ids.append(f"google_{i}")
@@ -59,6 +58,10 @@ def charger_lieux_google():
 
 @app.route("/")
 def accueil():
+    return render_template("index.html")
+
+@app.route("/status")
+def status():
     collection = get_collection()
     return jsonify({
         "message": "RAG Marseille en ligne !",
@@ -69,7 +72,6 @@ def accueil():
 def question():
     data = request.get_json()
     question_utilisateur = data.get("question")
-
     collection = get_collection()
     resultats = collection.query(
         query_texts=[question_utilisateur],
@@ -77,7 +79,6 @@ def question():
     )
     documents_pertinents = resultats["documents"][0]
     contexte = "\n".join(documents_pertinents)
-
     reponse = openai_client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -85,7 +86,6 @@ def question():
             {"role": "user", "content": f"Contexte:\n{contexte}\n\nQuestion: {question_utilisateur}"}
         ]
     )
-
     return jsonify({
         "question": question_utilisateur,
         "reponse": reponse.choices[0].message.content,
@@ -96,14 +96,11 @@ def question():
 def ajouter():
     data = request.get_json()
     lieu = data.get("lieu")
-
     if not lieu:
         return jsonify({"erreur": "Le champ 'lieu' est requis"}), 400
-
     collection = get_collection()
     nouvel_id = f"manuel_{collection.count()}"
     collection.add(documents=[lieu], ids=[nouvel_id])
-
     return jsonify({
         "message": "Lieu ajouté avec succès",
         "id": nouvel_id,
